@@ -2,6 +2,8 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
+UPLOAD_PATH = "resume.txt"
+
 app = FastAPI()
 
 app.add_middleware(
@@ -12,3 +14,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.post("/upload_resume/")
+async def upload_resume(file: UploadFile = File(...)):
+    contents = await file.read()
+    with open(UPLOAD_PATH, "wb") as f:
+        f.write(contents)
+    return {"message": "Resume uploaded successfully"}
+
+@app.post("/analyze/")
+async def analyze_job(job_text: str):
+    if not os.path.exists(UPLOAD_PATH):
+        return {"error": "Resume not uploaded"}
+    
+    with open(UPLOAD_PATH, "r") as f:
+        resume_text = f.read()
+    
+    job_words = set(job_text.lower().split())
+    resume_words = set(resume_text.lower().split())
+    
+    matching_words = job_words.intersection(resume_words)
+    score = round(len(matching_words) / len(job_words) * 100, 2) if job_words else 0
+
+    return {"match_score": score, "matching_words": list(matching_words)}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
