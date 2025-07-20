@@ -1,0 +1,6 @@
+sql
+python
+javascript
+java
+c
+c++

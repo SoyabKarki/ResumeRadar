@@ -1,5 +1,7 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import uvicorn
 import os
 
 UPLOAD_PATH = "resume.txt"
@@ -14,6 +16,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class JobDescription(BaseModel):
+    job_text: str
+
 @app.post("/upload_resume/")
 async def upload_resume(file: UploadFile = File(...)):
     contents = await file.read()
@@ -22,12 +27,14 @@ async def upload_resume(file: UploadFile = File(...)):
     return {"message": "Resume uploaded successfully"}
 
 @app.post("/analyze/")
-async def analyze_job(job_text: str):
+async def analyze_job(payload: JobDescription):
     if not os.path.exists(UPLOAD_PATH):
         return {"error": "Resume not uploaded"}
     
     with open(UPLOAD_PATH, "r") as f:
         resume_text = f.read()
+
+    job_text = payload.job_text
     
     job_words = set(job_text.lower().split())
     resume_words = set(resume_text.lower().split())
@@ -39,5 +46,4 @@ async def analyze_job(job_text: str):
 
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
