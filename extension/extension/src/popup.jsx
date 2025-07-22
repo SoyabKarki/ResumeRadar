@@ -3,51 +3,149 @@ import ReactDOM from 'react-dom/client'
 
 function Popup() {
     const [result, setResult] = useState(null);
+    const [jobText, setJobText] = useState("");
+    const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleUpload = async (e) => {
         const file = e.target.files[0];
+        if (!file) return;
+
         const formData = new FormData();
         formData.append("file", file);
 
-        await fetch("http://localhost:8000/upload_resume/", {
-            method: "POST",
-            body: formData
-        });
+        setMessage("Uploading...");
+        setResult(null);
 
-        alert("Resume uploaded successfully");
+        try{
+            const res = await fetch("http://localhost:8000/upload_resume/", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await res.json();
+            setMessage(data.message || "Resume uploaded successfully");
+        } catch {
+            setMessage("Error uploading resume");
+        };
     }
 
-    const handleAnalyze = async (e) => {
-        const jobText = prompt("Paste job description here:");
+    const handleAnalyze = async () => {
+        if (!jobText.trim()) {
+            setMessage("Please enter a job description");
+            return;
+        };
+        
+        setLoading(true);
+        setResult(null);
+        setMessage("Analyzing...");
 
-        const res = await fetch("http://localhost:8000/analyze/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ job_text: jobText })
-        });
+        try {
+            const res = await fetch("http://localhost:8000/analyze/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ job_text: jobText })
+            });
 
-        const data = await res.json();
-        setResult(data);
+            const data = await res.json();
+            if (data.error) {
+                setMessage("Error: " + data.error);
+            } else {
+                setResult(data);
+                setMessage("");
+            }
+        } catch {
+            setMessage("Error analyzing resume");
+        } finally {
+            setLoading(false);
+
     }
 
     return (
-        <div style={{ padding: "10px", width: "300px" }}>
-            <h3>Resume Radar</h3>
+        <div style={styles.container}>
+            <h2 style={styles.title}>Resume Radar</h2>
 
-            <input type="file" onChange={handleUpload} />
-            <br />
-            <button onClick={handleAnalyze}>Analyze</button>
+            <input type="file" onChange={handleUpload} style={styles.inputFile} />
+
+            <textarea
+                rows="5"
+                placeholder="Paste job description here..."
+                value={jobText}
+                onChange={(e) => setJobText(e.target.value)}
+                style={styles.textarea}
+            />
+
+            <button onClick={handleAnalyze} style={styles.button} disabled={loading}>
+                {loading ? "Analyzing..." : "Analyze"}
+            </button>
+
+            {message && <p style={styles.message}>{message}</p>}
 
             {result && (
-                <div>
-                    <p>Match Score: {result.match_score}</p>
-                    <p>Matching Words: {result.matching_words.join(", ")}</p>
+                <div style={styles.resultBox}>
+                    <p><strong>Match Score: </strong> {result.match_score}%</p>
+                    <p><strong>Matching Words: </strong></p>
+                    <ul style={styles.keywordList}>
+                        {result.matching_words.map((word, index) => (
+                            <li key={index}>{word}</li>
+                        ))}
+                    </ul>
                 </div>
             )}
         </div>
     )
 }
+
+const styles = {
+  container: {
+    padding: "15px",
+    width: "300px",
+    fontFamily: "Arial, sans-serif",
+    fontSize: "14px",
+  },
+  title: {
+    textAlign: "center",
+    marginBottom: "10px",
+    fontSize: "18px",
+    color: "#333",
+  },
+  inputFile: {
+    width: "100%",
+    marginBottom: "10px",
+  },
+  textarea: {
+    width: "100%",
+    padding: "8px",
+    resize: "vertical",
+    borderRadius: "4px",
+    border: "1px solid #ccc",
+    marginBottom: "10px",
+  },
+  button: {
+    width: "100%",
+    padding: "8px",
+    backgroundColor: "#4CAF50",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+  },
+  message: {
+    marginTop: "10px",
+    color: "#d9534f",
+  },
+  resultBox: {
+    marginTop: "10px",
+    padding: "8px",
+    backgroundColor: "#f9f9f9",
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+  },
+  keywordList: {
+    paddingLeft: "18px",
+  },
+};
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Popup />);
