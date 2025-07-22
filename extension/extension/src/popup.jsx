@@ -60,7 +60,7 @@ function Popup() {
             setMessage("Error analyzing resume");
         } finally {
             setLoading(false);
-
+        }
     }
 
     return (
