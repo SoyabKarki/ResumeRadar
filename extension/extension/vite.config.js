@@ -18,7 +18,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'popup.html'),
+        content: resolve(__dirname, 'content.js')
       },
+      external: ['fsevents']
     },
     outDir: 'dist',
     emptyOutDir: true,

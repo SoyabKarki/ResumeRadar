@@ -4,6 +4,8 @@ from pydantic import BaseModel
 import uvicorn
 import os
 
+from cleanup import clean_job_text
+
 UPLOAD_PATH = "resume.txt"
 
 app = FastAPI()
@@ -34,7 +36,8 @@ async def analyze_job(payload: JobDescription):
     with open(UPLOAD_PATH, "r") as f:
         resume_text = f.read()
 
-    job_text = payload.job_text
+    raw_text = payload.job_text
+    job_text = clean_job_text(raw_text)
     
     job_words = set(job_text.lower().split())
     resume_words = set(resume_text.lower().split())

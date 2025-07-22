@@ -30,15 +30,41 @@ function Popup() {
         };
     }
 
-    const handleAnalyze = async () => {
-        if (!jobText.trim()) {
-            setMessage("Please enter a job description");
-            return;
-        };
-        
+    const getJobDescriptionFromPage = () => {
+        return new Promise((resolve) => {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                chrome.tabs.sendMessage(
+                    tabs[0].id,
+                    { type: "GET_JOB_DESCRIPTION" },
+                    (response) => {
+                        if (chrome.runtime.lastError) {
+                            resolve(null);
+                        } else {
+                            resolve(response?.jobText || null);
+                        }
+                    }
+                )
+            })
+        })
+    }
+
+    const handleAnalyze = async () => {        
         setLoading(true);
         setResult(null);
         setMessage("Analyzing...");
+
+        let jobTextToUse = jobText;
+
+        if (!jobTextToUse.trim()) {
+            jobTextToUse = await getJobDescriptionFromPage();
+
+            if (!jobTextToUse) {
+                setMessage("Unable to auto-extract. Please paste job description.");
+                setLoading(false);
+                return;
+            }
+            setJobText(jobTextToUse);
+        }
 
         try {
             const res = await fetch("http://localhost:8000/analyze/", {
@@ -46,7 +72,7 @@ function Popup() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ job_text: jobText })
+                body: JSON.stringify({ job_text: jobTextToUse })
             });
 
             const data = await res.json();
@@ -62,6 +88,7 @@ function Popup() {
             setLoading(false);
         }
     }
+
 
     return (
         <div style={styles.container}>
