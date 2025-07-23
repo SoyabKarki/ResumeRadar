@@ -7,6 +7,11 @@ function Popup() {
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const [resumeText, setResumeText] = useState("");
+    const [requiredStr, setRequiredStr] = useState("");  
+    const [preferredStr, setPreferredStr] = useState(""); 
+
+    // Upload resume -> get raw text from backend
     const handleUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -18,18 +23,32 @@ function Popup() {
         setResult(null);
 
         try{
-            const res = await fetch("http://localhost:8000/upload_resume/", {
+            const res = await fetch("http://localhost:8000/upload/resume/", {
                 method: "POST",
                 body: formData
             });
 
             const data = await res.json();
-            setMessage(data.message || "Resume uploaded successfully");
+            setResumeText(data.resume_text);
+            setMessage("Resume uploaded successfully");
         } catch {
             setMessage("Error uploading resume");
         };
-    }
+    };
 
+    // Turn comma/newline separated list into KeywordSpec[]
+    const toSpecs = (str) => {
+        return str
+            .split(/[,;\n]+/)
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean)
+            .map((term) => ({
+                term,
+                kind: term.includes(" ") ? "phrase" : "word"
+            }))
+    };
+
+    // Try to auto-grab JD text from active tab (LinkedIn) via content script
     const getJobDescriptionFromPage = () => {
         return new Promise((resolve) => {
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -46,7 +65,7 @@ function Popup() {
                 )
             })
         })
-    }
+    };
 
     const handleAnalyze = async () => {        
         setLoading(true);
@@ -66,13 +85,22 @@ function Popup() {
             setJobText(jobTextToUse);
         }
 
+        // Build strict keyword payload
+        const payload = {
+            resume_text: resumeText,
+            jd: {
+                required: toSpecs(requiredStr),
+                preferred: toSpecs(preferredStr)
+            }
+        };
+
         try {
-            const res = await fetch("http://localhost:8000/analyze/", {
+            const res = await fetch("http://localhost:8000/analyze/keywords", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ job_text: jobTextToUse })
+                body: JSON.stringify(payload)
             });
 
             const data = await res.json();
@@ -87,7 +115,7 @@ function Popup() {
         } finally {
             setLoading(false);
         }
-    }
+    };
 
 
     return (
@@ -97,10 +125,26 @@ function Popup() {
             <input type="file" onChange={handleUpload} style={styles.inputFile} />
 
             <textarea
-                rows="5"
-                placeholder="Paste job description here..."
+                rows="4"
+                placeholder="Paste job description here (optional, we try to auto-grab)..."
                 value={jobText}
                 onChange={(e) => setJobText(e.target.value)}
+                style={styles.textarea}
+            />
+
+            <textarea 
+                rows="3"
+                placeholder="Required keywords (comma or newline separated)"
+                value={requiredStr}
+                onChange={(e) => setRequiredStr(e.target.value)}
+                style={styles.textarea}
+            />
+
+            <textarea 
+                rows="3"
+                placeholder="Optional keywords"
+                value={preferredStr}
+                onChange={(e) => setPreferredStr(e.target.value)}
                 style={styles.textarea}
             />
 
@@ -112,13 +156,29 @@ function Popup() {
 
             {result && (
                 <div style={styles.resultBox}>
-                    <p><strong>Match Score: </strong> {result.match_score}%</p>
-                    <p><strong>Matching Words: </strong></p>
-                    <ul style={styles.keywordList}>
-                        {result.matching_words.map((word, index) => (
-                            <li key={index}>{word}</li>
-                        ))}
-                    </ul>
+                    <p><strong>Pass (all required present): </strong>{result.pass ? "YES" : "NO"}</p>
+                    <p><strong>Required:</strong> {result.required_found}/{result.required_total}</p>
+
+                    {result.required_missing.length > 0 && (
+                        <>
+                            <p><strong>Required missing:</strong></p>
+                            <ul style={styles.keywordList}>
+                                {result.required_missing.map((w, i) => <li key={i}>{w}</li>)}
+                            </ul>
+                        </>
+                    )}
+
+                    <p style={{marginTop: "6px"}}><strong>Preferred:</strong> {result.preferred_found}/{result.preferred_total}</p>
+
+                    {result.preferred_missing.length > 0 && (
+                        <>
+                            <p><strong>Preferred missing:</strong></p>
+                            <ul style={styles.keywordList}>
+                                {result.preferred_missing.map((w, i) => <li key={i}>{w}</li>)}
+                            </ul>
+                        </>
+                    )}
+
                 </div>
             )}
         </div>
