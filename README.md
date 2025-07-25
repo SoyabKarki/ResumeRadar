@@ -1,6 +1,8 @@
-# ResumeRadar 🎯
+# ResumeRadar
 
-A Chrome extension that analyzes resumes against job descriptions using AI-powered keyword extraction and matching.
+A Chrome extension that analyzes your resume against job descriptions using AI so you can ensure you're not missing out on keywords ATS might be looking for :)
+
+`ChatGPT wrapper :(`
 
 ## Features
 
@@ -11,6 +13,13 @@ A Chrome extension that analyzes resumes against job descriptions using AI-power
 - **Real-time Scoring**: Provides match percentage and detailed keyword breakdown
 - **Chrome Extension**: Easy-to-use browser extension interface
 
+## How it works
+
+1. **Upload your resume** (PDF or DOCX)
+2. **Navigate to a LinkedIn job** (or paste description manually)
+3. **Click analyze** to get your match score
+4. **Review results** and optimize your resume accordingly
+
 ## Architecture
 
 ```
@@ -18,7 +27,6 @@ ResumeRadar/
 ├── backend/                 # FastAPI backend server
 │   ├── extractor/          # Keyword extraction modules
 │   ├── routers/            # API endpoints
-│   ├── tests/              # Unit tests
 │   └── main.py             # Server entry point
 ├── extension/              # Chrome extension
 │   ├── src/                # React frontend
@@ -27,13 +35,13 @@ ResumeRadar/
 └── README.md
 ```
 
-## Quick Start
+## Quick Start (if you plan on forking or just checking out the codebase)
 
 ### Prerequisites
 
 - Python 3.8+
 - Node.js 16+
-- OpenAI API key (optional, for enhanced keyword extraction)
+- OpenAI API key
 
 ### Backend Setup
 
@@ -44,17 +52,27 @@ ResumeRadar/
    ```
 
 2. **Configure environment**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your OpenAI API key if desired
-   ```
+Environment variables in `.env`:
+
+    ```bash
+    # OpenAI Configuration
+    # These variables are designed so that you can change them accordingly. Feel free to mess around :)
+    USE_OPENAI=false
+    OPENAI_API_KEY=your_api_key_here 
+    OPENAI_MODEL=gpt-4o-mini
+    OPENAI_TEMPERATURE=0.0
+    OPENAI_TIMEOUT=10
+    ```
 
 3. **Run the server**:
    ```bash
-   python main.py
+   # Make sure you are in the root directory, then:
+   source backend/venv/bin/activate
+   python -m backend.main
    ```
    
    The API will be available at `http://localhost:8000`
+   You can check out the swagger docs provided by FastAPI at `http://localhost:8000/docs`
 
 ### Frontend Setup
 
@@ -124,100 +142,20 @@ Upload and extract text from resume file.
 }
 ```
 
-### GET `/analyze/health`
-Health check endpoint.
-
-## Configuration
-
-Environment variables in `.env`:
-
-```bash
-# OpenAI Configuration
-USE_OPENAI=false
-OPENAI_API_KEY=your_api_key_here
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_TEMPERATURE=0.0
-OPENAI_TIMEOUT=10
-
-# Server Configuration
-HOST=0.0.0.0
-PORT=8000
-DEBUG=false
-
-# File Upload
-MAX_FILE_SIZE=10485760  # 10MB
-ALLOWED_EXTENSIONS=["pdf", "docx"]
-TEMP_DIR=tmp
-
-# CORS
-CORS_ORIGINS=["*"]
-```
-
-## Development
-
-### Running Tests
-
-```bash
-cd backend
-pytest tests/
-```
-
-### Code Quality
-
-```bash
-# Backend
-cd backend
-black .
-flake8 .
-
-# Frontend
-cd extension/extension
-npm run lint
-```
-
-### Building for Production
-
-```bash
-# Frontend
-cd extension/extension
-npm run build
-
-# Backend
-cd backend
-# Use a production WSGI server like gunicorn
-gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details.
-
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Extension not loading**: Make sure you're loading from the `dist` folder after building
 2. **API connection errors**: Verify the backend server is running on port 8000
-3. **File upload issues**: Check file size (max 10MB) and format (PDF/DOCX only)
+3. **File upload issues**: The current version only supports PDF/DOCX
 4. **OpenAI errors**: Verify your API key is valid and has sufficient credits
 
-### Debug Mode
+If you face any issues, please post them on the issues tab of this GitHub repository.
 
-Enable debug logging by setting `DEBUG=true` in your `.env` file.
+## Future Goals
 
-## Roadmap
-
-- [ ] Support for more job sites (Indeed, Glassdoor)
-- [ ] Resume optimization suggestions
-- [ ] Keyword importance weighting
-- [ ] Batch analysis for multiple jobs
-- [ ] Export analysis reports
-- [ ] Integration with job application tracking
+- Support for more job sites (Indeed, Glassdoor)
+- More robust keyword importance weighting
+- Export analysis reports
+- Integration with job application tracking
