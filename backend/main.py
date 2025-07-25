@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import upload, analyze
+from backend.routers import upload, analyze
 
 
 app = FastAPI(title="ATS Keyword Checker MVP")

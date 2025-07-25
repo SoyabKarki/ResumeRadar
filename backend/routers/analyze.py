@@ -1,12 +1,16 @@
 from fastapi import APIRouter, HTTPException
-from models import AutoAnalyzePayload, AutoAnalyzeResponse
-from matcher import match_sets
-from cleanup import clean_text, build_keyword_sets, score
+
+from backend.models import AutoAnalyzePayload, AutoAnalyzeResponse
+from backend.matcher import match_sets
+from backend.extractor.cleanup import clean_text, score
+from backend.extractor.factory import get_extractor
 
 router = APIRouter(
     prefix="/analyze",
     tags=["analyze"]
 )
+
+extractor = get_extractor()
 
 @router.post("/auto", response_model=AutoAnalyzeResponse)
 def analyze_auto(payload: AutoAnalyzePayload):
@@ -18,13 +22,21 @@ def analyze_auto(payload: AutoAnalyzePayload):
     resume_clean = clean_text(payload.resume_text)
 
     # Extract keyword sets
-    required, preferred = build_keyword_sets(jd_clean)
+    required, preferred = extractor.extract(jd_clean)
 
     # Match
-    matched_req, matched_pref, missing_req, missing_pref = match_sets(resume_clean, required, preferred)
+    matched_req, missing_req, matched_pref, missing_pref = match_sets(
+        resume_clean,
+        required, 
+        preferred
+    )
 
     # Score
-    match_score = score(required, preferred, set(matched_req), set(matched_pref))
+    match_score = score(required, 
+                        preferred, 
+                        set(matched_req), 
+                        set(matched_pref)
+                        )
 
     return AutoAnalyzeResponse(
         match_score=match_score,

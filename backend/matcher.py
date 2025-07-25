@@ -1,5 +1,5 @@
 from typing import Set, Tuple
-from textprep import tokenize, build_ngrams, normalize
+from backend.extractor.textprep import tokenize, build_ngrams, normalize
 
 def match_sets(resume_text: str, required: Set[str], preferred: Set[str]) -> Tuple[list[str], list[str], list[str], list[str]]:
     """Auto mode matcher: set of tokens/phrases on both sides."""
