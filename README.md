@@ -92,14 +92,6 @@ Environment variables in `.env`:
    - Enable "Developer mode"
    - Click "Load unpacked" and select the `extension/extension/dist` folder
 
-## Usage
-
-1. **Upload Resume**: Click the extension icon and upload your resume (PDF or DOCX)
-2. **Get Job Description**: 
-   - Navigate to a LinkedIn job posting (auto-extraction)
-   - Or paste the job description manually
-3. **Analyze**: Click "Analyze Resume" to get your match score and keyword breakdown
-
 ## API Endpoints
 
 ### POST `/analyze/auto`
