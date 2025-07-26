@@ -1,9 +1,12 @@
 from fastapi import APIRouter, HTTPException
+import logging
 
 from backend.models import AutoAnalyzePayload, AutoAnalyzeResponse
 from backend.matcher import match_sets
 from backend.extractor.cleanup import clean_text, score
 from backend.extractor.factory import get_extractor
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/analyze",
@@ -14,6 +17,8 @@ extractor = get_extractor()
 
 @router.post("/auto", response_model=AutoAnalyzeResponse)
 def analyze_auto(payload: AutoAnalyzePayload):
+    logger.info(f"Analysis request - Job text: {len(payload.job_text)} chars, Resume: {len(payload.resume_text)} chars")
+
     if not payload.resume_text or not payload.job_text:
         raise HTTPException(status_code=400, detail="Missing resume or job text")
     
@@ -37,6 +42,8 @@ def analyze_auto(payload: AutoAnalyzePayload):
                         set(matched_req), 
                         set(matched_pref)
                         )
+
+    logger.info(f"Analysis complete - Score: {match_score}%, Required matched: {len(matched_req)}/{len(required)}")
 
     return AutoAnalyzeResponse(
         match_score=match_score,
