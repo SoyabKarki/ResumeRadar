@@ -1,5 +1,9 @@
 from typing import Set, Tuple
 from backend.extractor.textprep import tokenize, build_ngrams, normalize
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def match_sets(resume_text: str, required: Set[str], preferred: Set[str]) -> Tuple[list[str], list[str], list[str], list[str]]:
     """Auto mode matcher: set of tokens/phrases on both sides."""
@@ -8,8 +12,11 @@ def match_sets(resume_text: str, required: Set[str], preferred: Set[str]) -> Tup
     token_set: Set[str] = set(tokens)
     ngrams = set(build_ngrams(tokens, n_min=2, n_max=5))
 
+
     def hit(term: str) -> bool:
-        return term in (ngrams if " " in term else token_set)
+        term_lower = term.lower()
+        result = term_lower in (ngrams if " " in term else token_set)
+        return result
 
     matched_req   = sorted([t for t in required  if hit(t)])
     missing_req   = sorted([t for t in required  if not hit(t)])
