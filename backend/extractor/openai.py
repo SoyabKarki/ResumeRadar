@@ -26,9 +26,8 @@ class OpenAIKeywordExtractor(KeywordExtractor):
         self.timeout    = OPENAI_TIMEOUT
 
     def extract(self, text: str) -> Tuple[Set[str], Set[str]]:
-        # If no key, immediately fallback
         if not OPENAI_API_KEY:
-            logger.warning("OpenAI API key not found. Fallback to local extractor.")
+            logger.warning("OpenAI API key not found.")
             return set(), set()
         
         prompt = f"""
@@ -89,6 +88,7 @@ class OpenAIKeywordExtractor(KeywordExtractor):
 
             req_list = data.get("required", [])[:30]
             pref_list = data.get("preferred", [])[:30]
+            logger.info(f"OpenAI extraction success: Extracted {len(req_list)} required and {len(pref_list)} preferred keywords")
             return set(req_list), set(pref_list)
         
         except Exception as e:

@@ -1,7 +1,7 @@
 import re
 from typing import List
 
-TOKEN_RE = re.compile(r"[a-z0-9\+\#\.]+") 
+TOKEN_RE = re.compile(r"[a-zA-Z0-9\+\#\.]+")
 
 def normalize(text: str) -> str:
     text = text.lower()

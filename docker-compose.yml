@@ -1,0 +1,25 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: resumeradar-redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+  backend:
+    build: .
+    container_name: resumeradar-backend
+    ports:
+      - 8000:8000
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - PYTHONPATH=/app
+    restart: unless-stopped
+  
+volumes:
+  redis_data:
