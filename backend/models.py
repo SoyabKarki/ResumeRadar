@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Literal, Optional, Set
+from typing import List
 
 class AutoAnalyzePayload(BaseModel):
     job_text: str

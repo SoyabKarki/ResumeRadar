@@ -12,6 +12,8 @@ A Chrome extension that analyzes your resume against job descriptions using AI s
 - **File Support**: Upload PDF and DOCX resume files
 - **Real-time Scoring**: Provides match percentage and detailed keyword breakdown
 - **Chrome Extension**: Easy-to-use browser extension interface
+- **Caching**: Caches data to reduce API calls and improve performance
+- **Data privacy**: User data is stored locally and is never fully visible on our end
 
 ## How it works
 
@@ -22,63 +24,145 @@ A Chrome extension that analyzes your resume against job descriptions using AI s
 
 ## Architecture
 
+The project is organized into two main components: a FastAPI backend for AI-powered analysis and a Chrome extension frontend. Here's the complete file structure:
+
 ```
 ResumeRadar/
-├── backend/                 # FastAPI backend server
-│   ├── extractor/          # Keyword extraction modules
-│   ├── routers/            # API endpoints
-│   └── main.py             # Server entry point
-├── extension/              # Chrome extension
-│   ├── src/                # React frontend
-│   ├── content.js          # Content script for LinkedIn
-│   └── manifest.json       # Extension manifest
-└── README.md
+├── backend/                          # FastAPI backend server
+│   ├── config/                       # Configuration modules
+│   │   ├── logging_config.py         # Logging setup and configuration
+│   │   └── redis_config.py           # Redis caching configuration
+│   ├── extractor/                    # AI keyword extraction system
+│   │   ├── base.py                   # Abstract base class for extractors
+│   │   ├── factory.py                # Factory pattern for extractor selection
+│   │   ├── openai.py                 # OpenAI GPT integration
+│   │   └── textprep.py               # Text preprocessing and normalization
+│   ├── routers/                      # API route definitions
+│   │   ├── analyze.py                # Resume analysis endpoint (/analyze/auto)
+│   │   └── upload.py                 # File upload endpoint (/upload/resume)
+│   ├── main.py                       # FastAPI application entry point
+│   ├── matcher.py                    # Core keyword matching logic
+│   ├── models.py                     # Pydantic data models
+│   ├── requirements.txt              # Python dependencies
+│
+├── extension/                        # Chrome extension frontend
+│   ├── src/                          # React source code
+│   │   ├── popup.jsx                 # Main popup interface
+│   │   ├── utils/                    # Utility functions
+│   │   │   └── fileUtils.js          # File/job description extraction logic
+│   ├── components/                   # Reusable UI components
+│   │   ├── index.js                  # Component exports
+│   │   ├── PassBanner.jsx            # Pass/Fail status display
+│   │   ├── SectionHeader.jsx         # Section header component
+│   │   └── TagList.jsx               # Keyword tag display
+│   ├── styles/                       # Styling and theming
+│   │   └── styles.js                 # CSS-in-JS styles
+│   ├── public/                       # Static assets
+│   │   └── icons/                    # Extension icons (16/32/48/128px)
+│   ├── content.js                    # LinkedIn job description extractor
+│   ├── background.js                 # Extension background worker
+│   ├── popup.html                    # Popup HTML wrapper
+│   ├── manifest.json                 # Chrome extension manifest
+│   ├── vite.config.js                # Vite build configuration
+│   ├── package.json                  # NPM scripts and dependencies
+│   └── eslint.config.js              # ESLint rules
+│
+├── docker-compose.yml               # Docker orchestration file
+├── Dockerfile                       # Backend Docker container setup
+├── README.md                        # Project documentation
+├── .gitignore                       # Git ignored files
+└── .env                             # Environment variables (local-only)
 ```
 
-## Quick Start (if you plan on forking or just checking out the codebase)
+## Key Technologies
+- **Backend**: FastAPI, OpenAI API, Redis
+- **Frontend**: React, Vite, Chrome Extension API
+- **Tools**: Docker, Git
+
+## Quick Start with Docker (if you plan on forking or just checking out the codebase)
 
 ### Prerequisites
 
-- Python 3.8+
-- Node.js 16+
+- Docker and Docker Compose
 - OpenAI API key
 
-### Backend Setup
+### Docker Setup
 
-1. **Install dependencies**:
+1. **Clone the repository**:
    ```bash
-   cd backend
-   pip install -r requirements.txt
+   git clone https://github.com/SoyabKarki/ResumeRadar.git
+   cd ResumeRadar
    ```
 
-2. **Configure environment**:
-Environment variables in `.env`:
-
-    ```bash
-    # OpenAI Configuration
-    # These variables are designed so that you can change them accordingly. Feel free to mess around :)
-    USE_OPENAI=false
-    OPENAI_API_KEY=your_api_key_here 
-    OPENAI_MODEL=gpt-4o-mini
-    OPENAI_TEMPERATURE=0.0
-    OPENAI_TIMEOUT=10
-    ```
-
-3. **Run the server**:
+2. **Create environment file**:
+   Create a `.env` file in the root directory:
    ```bash
-   # Make sure you are in the root directory, then:
-   source backend/venv/bin/activate
-   python -m backend.main
+   # OpenAI Configuration
+   OPENAI_API_KEY=your_api_key_here
+   USE_OPENAI=true
+   OPENAI_MODEL=gpt-4o-mini
+   OPENAI_TEMPERATURE=0.0
+   OPENAI_TIMEOUT=20
+   
+   # Redis Configuration (Docker will handle this automatically)
+   REDIS_URL=redis://redis:6379
+   ```
+
+3. **Build and run with Docker Compose**:
+   ```bash
+   docker-compose up --build
    ```
    
-   The API will be available at `http://localhost:8000`
-   You can check out the swagger docs provided by FastAPI at `http://localhost:8000/docs`
+   This will:
+   - Build the backend container with all dependencies
+   - Start Redis for caching
+   - Run the FastAPI backend on `http://localhost:8000`
+   - Set up proper networking between services
+
+4. **Build the extension** (in a separate terminal):
+   ```bash
+   cd extension
+   npm install
+   npm run build
+   ```
+
+5. **Load the extension in Chrome**:
+   - Open Chrome and go to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked" and select the `extension/dist` folder
+
+### Extras (Docker Commands) 
+
+**Start the application:**
+```bash
+docker-compose up
+```
+
+**Start in background:**
+```bash
+docker-compose up -d
+```
+
+**Stop the application:**
+```bash
+docker-compose down
+```
+
+**View logs:**
+```bash
+docker-compose logs -f backend
+```
+
+**Rebuild after changes:**
+```bash
+docker-compose up --build
+```
 
 ### Frontend Setup
 
 1. **Install dependencies**:
    ```bash
-   cd extension/extension
+   cd extension
    npm install
    ```
 
@@ -92,58 +176,38 @@ Environment variables in `.env`:
    - Enable "Developer mode"
    - Click "Load unpacked" and select the `extension/extension/dist` folder
 
-## API Endpoints
+## How to Use
 
-### POST `/analyze/auto`
-Analyze resume against job description.
+### Step 1: Setup
+1. Follow the installation instructions above
+2. Ensure both backend and frontend are running
+3. Load the extension in Chrome
 
-**Request**:
-```json
-{
-  "job_text": "Job description text...",
-  "resume_text": "Resume text..."
-}
-```
+### Step 2: Upload Resume
+1. Click the ResumeRadar extension icon
+2. Upload your resume (PDF or DOCX)
+3. Your resume will be stored locally for analysis
 
-**Response**:
-```json
-{
-  "match_score": 85.5,
-  "required": ["Python", "SQL", "React"],
-  "preferred": ["Docker", "AWS", "TypeScript"],
-  "matched_required": ["Python", "React"],
-  "missing_required": ["SQL"],
-  "matched_preferred": ["Docker"],
-  "missing_preferred": ["AWS", "TypeScript"],
-  "auto_extracted": true
-}
-```
+### Step 3: Analyze Job
+1. Navigate to a LinkedIn job posting
+2. Click "Analyze" in the extension popup
+3. Wait for AI-powered keyword extraction and matching
 
-### POST `/upload/resume`
-Upload and extract text from resume file.
+### Step 4: Review Results
+- **Match Score**: Overall percentage match
+- **Required Keywords**: Must-have skills (green = present, red = missing)
+- **Preferred Keywords**: Nice-to-have skills (blue = present, yellow = missing)
+- **Pass/Fail**: Whether you have all required keywords
 
-**Request**: Multipart form with PDF/DOCX file
+## API Documentation
 
-**Response**:
-```json
-{
-  "text": "Extracted resume text...",
-  "filename": "resume.pdf",
-  "size": 12345,
-  "extracted_length": 1500
-}
-```
+Once the backend is running, you can view the interactive API documentation at:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
-## Troubleshooting
-
-### Common Issues
-
-1. **Extension not loading**: Make sure you're loading from the `dist` folder after building
-2. **API connection errors**: Verify the backend server is running on port 8000
-3. **File upload issues**: The current version only supports PDF/DOCX
-4. **OpenAI errors**: Verify your API key is valid and has sufficient credits
-
-If you face any issues, please post them on the issues tab of this GitHub repository.
+Key endpoints:
+- `POST /analyze/auto` - Analyze resume against job description
+- `POST /upload/resume` - Upload and extract resume text
 
 ## Future Goals
 
@@ -151,3 +215,6 @@ If you face any issues, please post them on the issues tab of this GitHub reposi
 - More robust keyword importance weighting
 - Export analysis reports
 - Integration with job application tracking
+
+
+`If you face any issues, please post them on the issues tab of this GitHub repository.`
