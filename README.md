@@ -1,4 +1,4 @@
-# ResumeRadar
+# Resume Radar
 
 A Chrome extension that analyzes your resume against job descriptions using AI so you can ensure you're not missing out on keywords ATS might be looking for :)
 
@@ -212,8 +212,8 @@ Key endpoints:
 ## Future Goals
 
 - Support for more job sites (Indeed, Glassdoor)
+- Better UI/UX
 - More robust keyword importance weighting
-- Export analysis reports
 - Integration with job application tracking
 
 

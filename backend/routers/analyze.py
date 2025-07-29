@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 import logging
 from datetime import datetime
 import hashlib
+import time
 
 from backend.models import AutoAnalyzePayload, AutoAnalyzeResponse
 from backend.matcher import match_sets
@@ -29,6 +30,8 @@ def calculate_score(required: set, preferred: set, matched_req: set, matched_pre
 @router.post("/auto", response_model=AutoAnalyzeResponse)
 def analyze_auto(payload: AutoAnalyzePayload):
     """Analyze a job description and resume with Redis caching for keywords"""
+    start_time = time.time()
+
     logger.info(f"Analysis request - Job text: {len(payload.job_text)} chars, Resume: {len(payload.resume_text)} chars")
 
     if not payload.resume_text or not payload.job_text:
@@ -72,8 +75,9 @@ def analyze_auto(payload: AutoAnalyzePayload):
                         set(matched_req), 
                         set(matched_pref)
                         )
+    end_time = time.time() - start_time
 
-    logger.info(f"Analysis complete - Score: {match_score}%, Required matched: {len(matched_req)}/{len(required)}")
+    logger.info(f"Analysis complete - Score: {match_score}%, Required matched: {len(matched_req)}/{len(required)}, Time taken: {end_time:.6f}s")
 
     return AutoAnalyzeResponse(
         match_score=match_score,
