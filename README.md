@@ -110,7 +110,7 @@ ResumeRadar/
 
 3. **Build and run with Docker Compose**:
    ```bash
-   docker-compose up --build
+   sudo docker compose up --build
    ```
    
    This will:
